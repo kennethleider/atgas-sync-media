@@ -6,24 +6,22 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import org.atgas.sync.media.beyondTV.webservices.BTVLicenseManager;
-import org.atgas.sync.media.beyondTV.webservices.BTVLicenseManagerSoap;
-import org.atgas.sync.media.beyondTV.webservices.types.PVSPropertyBag;
+import org.atgas.sync.media.beyondTV.commands.DumpCommand;
+import org.atgas.sync.media.beyondTV.drivers.LibraryDriver;
 
 public class Main {
 
-   public static String DEFAULT_CONFIG_FILE = Main.class.getName() + ".properties";
-   private static Logger LOG = Logger.getLogger(Main.class.getName());
+   public static final String DEFAULT_CONFIG_FILE = Main.class.getName() + ".properties";
+   private static final Logger LOG = Logger.getLogger(Main.class.getName());
 
    public static void main(String[] args) {
       Properties config = loadConfiguration(args);
       
       if (config != null) {
-         BTVLicenseManager manager = new BTVLicenseManager();
-         BTVLicenseManagerSoap client = manager.getBTVLicenseManagerSoap();
-         PVSPropertyBag logon = client.logon(config.getProperty(Configuration.LICENSE.propertyName),
-                                             config.getProperty(Configuration.USERNAME.propertyName),
-                                             config.getProperty(Configuration.PASSWORD.propertyName));
+         BTVSession session = BTVSession.connect(config);
+         LibraryDriver driver = new LibraryDriver();
+         driver.execute(session, new DumpCommand());
+         
       }
    }
 

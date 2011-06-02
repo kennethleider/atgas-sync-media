@@ -15,8 +15,6 @@ public class BTVSession {
       this.ticket = ticket;
    }
    
-   
-   
    public static BTVSession connect(Properties config) {
       return connect(config.getProperty(Configuration.LICENSE.propertyName),
                      config.getProperty(Configuration.USERNAME.propertyName),
@@ -29,5 +27,10 @@ public class BTVSession {
       
       String ticket = PropertyConverter.convert(logon).get("AuthTicket");
       return new BTVSession(manager, ticket);
+   }
+   
+   public void close()
+   {
+      manager.logoff(ticket);
    }
 }
