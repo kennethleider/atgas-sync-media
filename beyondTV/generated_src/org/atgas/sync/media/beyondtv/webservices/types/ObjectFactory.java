@@ -30,14 +30,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link PVSPropertyBag }
-     * 
-     */
-    public PVSPropertyBag createPVSPropertyBag() {
-        return new PVSPropertyBag();
-    }
-
-    /**
      * Create an instance of {@link PVSProperty }
      * 
      */
@@ -51,6 +43,14 @@ public class ObjectFactory {
      */
     public ArrayOfPVSProperty createArrayOfPVSProperty() {
         return new ArrayOfPVSProperty();
+    }
+
+    /**
+     * Create an instance of {@link PVSPropertyBag }
+     * 
+     */
+    public PVSPropertyBag createPVSPropertyBag() {
+        return new PVSPropertyBag();
     }
 
 }

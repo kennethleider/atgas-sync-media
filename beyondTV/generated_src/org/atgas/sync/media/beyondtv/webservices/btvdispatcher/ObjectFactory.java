@@ -30,22 +30,6 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link GetActiveRecordingsWithChannelResponse }
-     * 
-     */
-    public GetActiveRecordingsWithChannelResponse createGetActiveRecordingsWithChannelResponse() {
-        return new GetActiveRecordingsWithChannelResponse();
-    }
-
-    /**
-     * Create an instance of {@link ArrayOfPVSPropertyBag }
-     * 
-     */
-    public ArrayOfPVSPropertyBag createArrayOfPVSPropertyBag() {
-        return new ArrayOfPVSPropertyBag();
-    }
-
-    /**
      * Create an instance of {@link GetActiveRecordings }
      * 
      */
@@ -62,11 +46,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link SetSources }
+     * Create an instance of {@link SetSourcesResponse }
      * 
      */
-    public SetSources createSetSources() {
-        return new SetSources();
+    public SetSourcesResponse createSetSourcesResponse() {
+        return new SetSourcesResponse();
     }
 
     /**
@@ -78,27 +62,19 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link GetActiveRecordingsWithChannel }
+     * Create an instance of {@link GetEnginesWithChannel }
      * 
      */
-    public GetActiveRecordingsWithChannel createGetActiveRecordingsWithChannel() {
-        return new GetActiveRecordingsWithChannel();
+    public GetEnginesWithChannel createGetEnginesWithChannel() {
+        return new GetEnginesWithChannel();
     }
 
     /**
-     * Create an instance of {@link GetEngines }
+     * Create an instance of {@link SetSources }
      * 
      */
-    public GetEngines createGetEngines() {
-        return new GetEngines();
-    }
-
-    /**
-     * Create an instance of {@link SetSourcesResponse }
-     * 
-     */
-    public SetSourcesResponse createSetSourcesResponse() {
-        return new SetSourcesResponse();
+    public SetSources createSetSources() {
+        return new SetSources();
     }
 
     /**
@@ -110,11 +86,35 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link GetEnginesWithChannel }
+     * Create an instance of {@link GetActiveRecordingsWithChannel }
      * 
      */
-    public GetEnginesWithChannel createGetEnginesWithChannel() {
-        return new GetEnginesWithChannel();
+    public GetActiveRecordingsWithChannel createGetActiveRecordingsWithChannel() {
+        return new GetActiveRecordingsWithChannel();
+    }
+
+    /**
+     * Create an instance of {@link ArrayOfPVSPropertyBag }
+     * 
+     */
+    public ArrayOfPVSPropertyBag createArrayOfPVSPropertyBag() {
+        return new ArrayOfPVSPropertyBag();
+    }
+
+    /**
+     * Create an instance of {@link GetActiveRecordingsWithChannelResponse }
+     * 
+     */
+    public GetActiveRecordingsWithChannelResponse createGetActiveRecordingsWithChannelResponse() {
+        return new GetActiveRecordingsWithChannelResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetEngines }
+     * 
+     */
+    public GetEngines createGetEngines() {
+        return new GetEngines();
     }
 
 }

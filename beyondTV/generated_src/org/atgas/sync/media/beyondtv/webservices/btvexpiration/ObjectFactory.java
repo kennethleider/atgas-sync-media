@@ -30,51 +30,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link SetShowLimitsByGuidResponse }
-     * 
-     */
-    public SetShowLimitsByGuidResponse createSetShowLimitsByGuidResponse() {
-        return new SetShowLimitsByGuidResponse();
-    }
-
-    /**
      * Create an instance of {@link GetMaxDaysByGuid }
      * 
      */
     public GetMaxDaysByGuid createGetMaxDaysByGuid() {
         return new GetMaxDaysByGuid();
-    }
-
-    /**
-     * Create an instance of {@link GetDriveLimitsByNameResponse }
-     * 
-     */
-    public GetDriveLimitsByNameResponse createGetDriveLimitsByNameResponse() {
-        return new GetDriveLimitsByNameResponse();
-    }
-
-    /**
-     * Create an instance of {@link GetShowLimitsByGuidResponse }
-     * 
-     */
-    public GetShowLimitsByGuidResponse createGetShowLimitsByGuidResponse() {
-        return new GetShowLimitsByGuidResponse();
-    }
-
-    /**
-     * Create an instance of {@link GetDriveLimitsByName }
-     * 
-     */
-    public GetDriveLimitsByName createGetDriveLimitsByName() {
-        return new GetDriveLimitsByName();
-    }
-
-    /**
-     * Create an instance of {@link SetDriveLimitsResponse }
-     * 
-     */
-    public SetDriveLimitsResponse createSetDriveLimitsResponse() {
-        return new SetDriveLimitsResponse();
     }
 
     /**
@@ -86,11 +46,11 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link GetMaxDaysByGuidResponse }
+     * Create an instance of {@link SetDaysLimitsByGuid }
      * 
      */
-    public GetMaxDaysByGuidResponse createGetMaxDaysByGuidResponse() {
-        return new GetMaxDaysByGuidResponse();
+    public SetDaysLimitsByGuid createSetDaysLimitsByGuid() {
+        return new SetDaysLimitsByGuid();
     }
 
     /**
@@ -102,6 +62,14 @@ public class ObjectFactory {
     }
 
     /**
+     * Create an instance of {@link GetDriveLimitsByName }
+     * 
+     */
+    public GetDriveLimitsByName createGetDriveLimitsByName() {
+        return new GetDriveLimitsByName();
+    }
+
+    /**
      * Create an instance of {@link SetDriveLimits }
      * 
      */
@@ -110,11 +78,43 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link SetDaysLimitsByGuid }
+     * Create an instance of {@link SetShowLimitsByGuidResponse }
      * 
      */
-    public SetDaysLimitsByGuid createSetDaysLimitsByGuid() {
-        return new SetDaysLimitsByGuid();
+    public SetShowLimitsByGuidResponse createSetShowLimitsByGuidResponse() {
+        return new SetShowLimitsByGuidResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetDriveLimitsByNameResponse }
+     * 
+     */
+    public GetDriveLimitsByNameResponse createGetDriveLimitsByNameResponse() {
+        return new GetDriveLimitsByNameResponse();
+    }
+
+    /**
+     * Create an instance of {@link SetDriveLimitsResponse }
+     * 
+     */
+    public SetDriveLimitsResponse createSetDriveLimitsResponse() {
+        return new SetDriveLimitsResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetShowLimitsByGuidResponse }
+     * 
+     */
+    public GetShowLimitsByGuidResponse createGetShowLimitsByGuidResponse() {
+        return new GetShowLimitsByGuidResponse();
+    }
+
+    /**
+     * Create an instance of {@link GetMaxDaysByGuidResponse }
+     * 
+     */
+    public GetMaxDaysByGuidResponse createGetMaxDaysByGuidResponse() {
+        return new GetMaxDaysByGuidResponse();
     }
 
     /**
