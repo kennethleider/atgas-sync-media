@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:boxee="as http://boxee.tv/spec/rss/" xmlns:creativeCommons="http://backend.userland.com/creativeCommonsRssModule" xmlns:media="http://search.yahoo.com/mrss/" 
+version="2.0">
+<channel>
+  <title>LP33</title>
+  <link>rss://www.lp33.tv/bin/lp33.rss</link>
+  <description>LP33 TV</description>
+  <language>en</language>
+<boxee:display>
+  <boxee:view default="1">
+
+    <boxee:view-option id="1" view-type="line"/>
+    <boxee:view-option id="2" view-type="thumb"/>
+    <boxee:view-option id="3" view-type="thumb with preview"/>
+    <boxee:view-option id="4" view-type="detailed list"/> 
+  </boxee:view>
+<!--  <boxee:sort default="1" folder-position="start">
+    <boxee:sort-option id="1" sort-by="label" sort-order="ascending" sort-type-name="name"/>
+  </boxee:sort> -->
+</boxee:display>
+ <item>
+  <title>LP33 Music Video TV</title>
+  <link>http://www.lp33.tv</link>
+
+  <media:content 
+url="flash://lp33.tv/src=http%3A%2F%2Fvideo.lp33.tv%2Fexternal%2Fplayer%2Fboxeeplayer.swf%3Fmemberid%3D102125%26random%3D1&amp;bx-ourl=http%3A%2F%2Fwww.lp33.tv&amp;bx-jsactions=http%3A%2F%2Fwww.lp33.tv%2Fbin%2Fboxeejs.js" 
+type="application/x-shockwave-flash" isDefault="true" />
+  <description>Non-stop great videos from our featured artists.  Just sit back and enjoy 24 hours a day!</description>
+  <boxee:image>http://www.lp33.tv/bin/boxee-assets/845-logo-C2-green.jpg</boxee:image>
+ </item>
+ <item>
+  <title>LP33 Trax</title>
+  <link>http://www.lp33.tv/</link>
+
+  <media:content 
+url="flash://lp33.tv/src=http%3A%2F%2Fvideo.lp33.tv%2Fexternal%2Fplayer%2Fboxeeplayer.swf%3Fmemberid%3D102126%26random%3D1&amp;bx-ourl=http%3A%2F%2Fwww.lp33.tv&amp;bx-jsactions=http%3A%2F%2Fwww.lp33.tv%2Fbin%2Fboxeejs.js" 
+type="application/x-shockwave-flash" isDefault="true" />
+  <description><![CDATA[Non-stop music from our featured artists. Turn up your speakers, we're goin' strong 24/7!]]></description>
+  <boxee:image>http://www.lp33.tv/bin/boxee-assets/845-logo-C2-lime.jpg</boxee:image>
+ </item>
+ <item>
+ <title>Browse Artists By Name</title>
+  <link>rss://www.lp33.tv/bin/video_rss.php</link>
+
+  <description>Browse the complete listing of LP33 artists by first letter of their name</description>
+  <boxee:image>http://www.lp33.tv/bin/boxee-assets/845-logo-C1-magenta.jpg</boxee:image>
+ </item>
+    <item>
+  	<title>Spotlight Channel</title>
+  	<link>rss://www.lp33.tv/boxee/110331.rss</link>
+  	<description></description>
+  	<boxee:image>http://www.lp33.tv/bin/boxee-assets/845-logo-C2-lime.jpg</boxee:image>
+   </item>
+   <item>
+  	<title>Hits Channel</title>
+  	<link>rss://www.lp33.tv/boxee/110320.rss</link>
+  	<description></description>
+  	<boxee:image>http://www.lp33.tv/bin/boxee-assets/845-logo-C2-ltblue.jpg</boxee:image>
+   </item>
+   <item>
+  	<title>ALT Channel</title>
+  	<link>rss://www.lp33.tv/boxee/110321.rss</link>
+  	<description></description>
+  	<boxee:image>http://www.lp33.tv/bin/boxee-assets/845-logo-C2-green.jpg</boxee:image>
+   </item>
+   <item>
+  	<title>Dancefloor Channel</title>
+  	<link>rss://www.lp33.tv/boxee/110322.rss</link>
+  	<description></description>
+  	<boxee:image>http://www.lp33.tv/bin/boxee-assets/845-logo-C2-red.jpg</boxee:image>
+   </item>
+   <item>
+  	<title>Hard Channel</title>
+  	<link>rss://www.lp33.tv/boxee/110323.rss</link>
+  	<description></description>
+  	<boxee:image>http://www.lp33.tv/bin/boxee-assets/845-logo-C2-green.jpg</boxee:image>
+   </item>
+   <item>
+  	<title>AM/PM Channel</title>
+  	<link>rss://www.lp33.tv/boxee/110324.rss</link>
+  	<description></description>
+  	<boxee:image>http://www.lp33.tv/bin/boxee-assets/845-logo-C2-red.jpg</boxee:image>
+   </item>
+   <item>
+  	<title>Staff Picks Channel</title>
+  	<link>rss://www.lp33.tv/boxee/110319.rss</link>
+  	<description></description>
+  	<boxee:image>http://www.lp33.tv/bin/boxee-assets/845-logo-C2-ltblue.jpg</boxee:image>
+   </item>
+   <item>
+  	<title>LP33 Live Channel</title>
+  	<link>rss://www.lp33.tv/boxee/110330.rss</link>
+  	<description></description>
+  	<boxee:image>http://www.lp33.tv/bin/boxee-assets/845-logo-C2-green.jpg</boxee:image>
+   </item>
+   <item>
+  	<title>DatPiff Hip Hop Channel</title>
+  	<link>rss://www.lp33.tv/boxee/109145.rss</link>
+  	<description></description>
+  	<boxee:image>http://www.lp33.tv/bin/boxee-assets/845-logo-C2-green.jpg</boxee:image>
+   </item>
+   <item>
+  	<title>LP33 TV Shows Channel</title>
+  	<link>rss://www.lp33.tv/boxee/108620.rss</link>
+  	<description></description>
+  	<boxee:image>http://www.lp33.tv/bin/boxee-assets/845-logo-C2-green.jpg</boxee:image>
+   </item>
+</channel>
+</rss>
+ 
