@@ -10,7 +10,7 @@ public class WatchedCommand implements Command<PVSPropertyBag> {
    @Override
    public void invoke(PVSPropertyBag bag) throws Exception {
       Map<String, String> properties = PropertyConverter.convert(bag);
-      System.out.println(properties.get("File")+ "," + properties.get("Watched"));
+      System.out.println(properties.get("Name")+ "," + properties.get("Watched") + "," + properties.get("LastPosition"));
    }
 
 }

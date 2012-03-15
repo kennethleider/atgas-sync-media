@@ -20,7 +20,7 @@ public class LibraryDriver {
       boolean done = false;
       do {
          ArrayOfPVSPropertyBag bags = library.flatViewByDate2(session.ticket, index, count);
-         
+
          for (PVSPropertyBag bag : bags.getPVSPropertyBag()) {
             try {
                command.invoke(bag);
@@ -32,6 +32,7 @@ public class LibraryDriver {
          if (bags.getPVSPropertyBag().size() < count) {
             done = true;
          }
+         index += count;
       } while (!done);
    }
 }
