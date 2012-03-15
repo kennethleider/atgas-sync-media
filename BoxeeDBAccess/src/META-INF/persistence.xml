@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.0" xmlns="http://java.sun.com/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+	<persistence-unit name="BoxeeDBAccess">
+		<class>org.atgas.sync.boxee.Actor</class>
+		<class>org.atgas.sync.boxee.Director</class>
+		<class>org.atgas.sync.boxee.Season</class>
+		<class>org.atgas.sync.boxee.Series</class>
+		<class>org.atgas.sync.boxee.VideoFile</class>
+		<class>org.atgas.sync.boxee.Watched</class>
+		<properties>
+        <property name="javax.persistence.jdbc.driver"   value="org.sqlite.JDBC"/>  
+        <property name="javax.persistence.jdbc.url" value="jdbc:sqlite:C:\Users\Carla\AppData\Roaming\BOXEE\userdata\Database\boxee_catalog.db"/>  
+		
+		</properties>
+
+	</persistence-unit>
+</persistence>
