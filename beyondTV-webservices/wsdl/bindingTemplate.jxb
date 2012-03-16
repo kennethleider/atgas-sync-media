@@ -1,0 +1,18 @@
+<jaxws:bindings 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    wsdlLocation="@wsdl@"
+    xmlns:jaxws="http://java.sun.com/xml/ns/jaxws"
+    xmlns:jaxb="http://java.sun.com/xml/ns/jaxb">
+    <jaxws:package name="org.atgas.media.beyondtv.webservices"/>
+    <jaxws:bindings node="wsdl:definitions/wsdl:types/xsd:schema[@targetNamespace='http://www.snapstream.com/WebService']">
+        <jaxb:schemaBindings>
+            <jaxb:package name="org.atgas.media.beyondtv.webservices.@package@"/>
+        </jaxb:schemaBindings>
+    </jaxws:bindings>
+    <jaxws:bindings node="wsdl:definitions/wsdl:types/xsd:schema[@targetNamespace='http://www.snapstream.com/types']">
+        <jaxb:schemaBindings>
+            <jaxb:package name="org.atgas.media.beyondtv.webservices.types"/>
+        </jaxb:schemaBindings>
+    </jaxws:bindings>
+</jaxws:bindings>
