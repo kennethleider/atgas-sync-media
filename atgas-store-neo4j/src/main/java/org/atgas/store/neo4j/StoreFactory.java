@@ -19,9 +19,6 @@ public class StoreFactory {
     Node secondNode;
     Relationship relationship;
 
-    public static void main(final String[] args) {
-        new StoreFactory().create();
-    }
     private static void registerShutdownHook( final GraphDatabaseService graphDb )
     {
         // Registers a shutdown hook for the Neo4j instance so that it

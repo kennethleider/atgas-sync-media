@@ -1,5 +1,6 @@
 package org.atgas.store.neo4j;
 
+import org.atgas.store.RelationshipType;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -24,33 +25,29 @@ class StoreImplementation implements Store {
         Transaction tx = database.beginTx();
         try {
             Index<Node> index = database.index().forNodes("atgas");
+                        
             for (Thing thing : things) {
-
-                Node node = findByID(thing.getId());
+                Node node = findByID(thing.getID());
                 // The id, source and standard cannot change once set.
                 if (node == null) {
                     node = database.createNode();
-                    String id = thing.getId();
-                    node.setProperty("id", thing.getId());
-                    index.add(node, "id", thing.getId());
-                    index.add(node, "source", thing.sourceID);
-                    index.add(node, "standard", thing.standardID);
-                    Node source = findByID(thing.sourceID);
-                    if (source != null) {
-                        node.createRelationshipTo(source, AtgasRelationshipType.Source);
-                    }
-
-                    Node standard = findByID(thing.standardID);
-                    if (standard != null) {
-                        node.createRelationshipTo(standard, AtgasRelationshipType.Standard);
-                    }
+                    String id = thing.getID();
+                    node.setProperty("id", thing.getID());
+                    index.add(node, "id", thing.getID());
                 }
 
                 // Always update the properties
                 for (Entry<String, String> property : thing.getPropertyValues()) {
                     node.setProperty(property.getKey(), property.getValue());
                 }
-
+            }
+            
+            for (Thing thing : things) {
+                Node node = findByID(thing.getID());
+                for (Relationship relationship : thing.getRelationships()) {
+                    Node target = findByID(relationship.getTargetID());
+                    node.createRelationshipTo(target, new AtgasRelationshipType(relationship.getType().name()));
+                }
             }
             tx.success();
         } finally {

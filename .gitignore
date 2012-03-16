@@ -1,0 +1,16 @@
+/BoxeeDBAccess/nbproject/private/
+/CSVColumnSplit/nbproject/private/
+/atgas-store-interface/nbproject/private/
+/atgas-interface-jax-ws/nbproject/private/
+/atgas-repository-embedded/nbproject/private/
+/beyondTV/nbproject/private/
+/atgas-store-interface/build/
+/atgas-store-interface/dist/
+/atgas-repository-embedded/build/
+/atgas-store-neo4j/nbproject/private/
+/tvdb/nbproject/private/
+/boxee/nbproject/private/
+/boxee/.settings/
+/.metadata
+/atgas-store-neo4j/nbproject/
+/atgas-store-neo4j/target/
