@@ -1,0 +1,56 @@
+{
+    add : [
+        {
+            "atgas-standard" : "5ed8fd15-92e0-49c6-9f3b-18c6598138d5",
+            "atgas-source" : "00747dcf-5c6d-4d91-9b17-e743d99aeb0b",
+            "atgas-id" : "aeeca6b8-0385-44c7-b766-217fb041e49c",
+            "title" : "imdb test series",
+            "imdb-id" : "tt0406429",
+            "zap2it-id" : "",
+            "relationships" : [
+                {
+                    "type" : "same",
+                    "atgas-standard" : "c1e22a68-d9ff-4455-8cdb-9938921e061c",
+                    "atgas-source" : "f94b823e-6384-444a-b4bb-d95e1967ded4",
+                    "atgas-id" : "1578e896-782d-4a8c-b364-0e6670016aa8"
+                }
+            ]
+        },
+        {
+            "atgas-standard" : "22d5f8d5-01b4-4fce-a9aa-91b42633839c",
+            "atgas-source" : "00747dcf-5c6d-4d91-9b17-e743d99aeb0b",
+            "atgas-id" : "f8caa0f7-dd92-44c6-b1db-28c6b5ab0c2a",
+            "title" : "imdb test episode",
+            "imdb-id" : "tt0629472",
+            "zap2it-id" : "",
+            "originalAirDate" : "",
+            "relationships" : [                
+                {            
+                    "atgas-standard" : "5ed8fd15-92e0-49c6-9f3b-18c6598138d5",
+                    "atgas-source" : "00747dcf-5c6d-4d91-9b17-e743d99aeb0b",
+                    "atgas-id" : "aeeca6b8-0385-44c7-b766-217fb041e49c",
+                    "type" : "series"
+                },
+                {
+                    "type" : "same",
+                    "atgas-standard" : "f459ae04-4265-4be8-a94e-73ceb35d3add",
+                    "atgas-source" : "f94b823e-6384-444a-b4bb-d95e1967ded4",
+                    "atgas-id" : "7828b1a2-82e7-4264-832f-3e83521675c2"
+                }
+            ]
+        },
+        {
+            "atgas-standard" : "f459ae04-4265-4be8-a94e-73ceb35d3add",
+            "atgas-source" : "f94b823e-6384-444a-b4bb-d95e1967ded4",
+            "atgas-id" : "7828b1a2-82e7-4264-832f-3e83521675c2",
+            "description" : "Test episode"
+        },
+        {
+            "atgas-standard" : "c1e22a68-d9ff-4455-8cdb-9938921e061c",
+            "atgas-source" : "f94b823e-6384-444a-b4bb-d95e1967ded4",
+            "atgas-id" : "1578e896-782d-4a8c-b364-0e6670016aa8",
+            "description" : "Test Series"
+        }
+        
+    ]
+}
