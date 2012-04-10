@@ -14,3 +14,5 @@
 /.metadata
 /atgas-store-neo4j/nbproject/
 /atgas-store-neo4j/target/
+/atgas-store-neo4j/dist/
+/atgas-store-neo4j/build/
