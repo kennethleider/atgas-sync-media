@@ -5,6 +5,7 @@
 package org.atgas.media.beyondtv;
 
 import java.util.Collection;
+import org.atgas.store.Change;
 import org.junit.*;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
@@ -24,7 +25,7 @@ public class IngestLibraryTest extends AbstractJUnit4SpringContextTests {
         System.out.println("call");
         LibraryCollector instance = applicationContext.getBean(LibraryCollector.class);
         Collection expResult = null;
-        Collection result = instance.call();
+        Change result = instance.call();
         Assert.assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
         Assert.fail("The test case is a prototype.");

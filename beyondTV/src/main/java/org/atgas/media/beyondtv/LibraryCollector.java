@@ -4,20 +4,18 @@
  */
 package org.atgas.media.beyondtv;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.atgas.media.beyondtv.webservices.BTVLibrary;
 import org.atgas.media.beyondtv.webservices.BTVLibrarySoap;
 import org.atgas.media.beyondtv.webservices.btvlibrary.ArrayOfPVSPropertyBag;
-import org.atgas.media.beyondtv.webservices.types.PVSProperty;
 import org.atgas.media.beyondtv.webservices.types.PVSPropertyBag;
 import org.atgas.store.Change;
 import org.atgas.store.ProxyRelationship;
 import org.atgas.store.Thing;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -26,19 +24,20 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class LibraryCollector implements Callable<Change> {
     private static final Logger LOG = Logger.getLogger(LibraryCollector.class.getName());
-    
+
     private static final String SERIES_STANDARD_ID = "c7fb8441-d5db-4113-8af0-e4ba0c3f51fd";
     private static final String EPISODE_STANDARD_ID = "a99a8588-93df-4811-8403-fe22c70fa00a";
     private static final String SOURCE_ID = "6dbb5efa-7cf4-4b12-8799-f0176f09b5db";
     private static final String FILE_STANDARD_ID= "c5919cbf-fbf3-4250-96e6-3fefae51ffc5";
-    
+    private static final String RECORDING_STANDARD_ID = "4a40811d-c067-467f-8ff6-89f37eddb933";
     @Autowired
     private final BTVSession session;
+
 
     public LibraryCollector(BTVSession session) {
         this.session = session;
     }
-    
+
     @Override
     public Change call() throws Exception {
         BTVLibrarySoap library = new BTVLibrary().getBTVLibrarySoap();
@@ -47,69 +46,96 @@ public class LibraryCollector implements Callable<Change> {
         for (PVSPropertyBag bag : library.getSeries(session.ticket).getPVSPropertyBag()) {
             final Thing series = createSeries(bag);
             retval.add(series);
-                        
-            ArrayOfPVSPropertyBag episodeBags = library.getItemsBySeries(session.ticket, series.getString("Name"));            
-            Map<String, Thing> episodes = createEpisodeThings(episodeBags, series);
-            List<Thing> files = createFileThings(episodeBags, episodes);
-            retval.add(episodes.values());
-            retval.add(files);
+
+            ArrayOfPVSPropertyBag episodeBags = library.getItemsBySeries(session.ticket, series.getString("title"));
+            retval.add(createEpisodeThings(episodeBags, series));
         }
-      
+
         return retval;
     }
 
-    private Map<String, Thing> createEpisodeThings(ArrayOfPVSPropertyBag episodeBags, Thing series) {
-        Map<String, Thing> retval = new HashMap<>();
-
-        for (PVSPropertyBag bag : episodeBags.getPVSPropertyBag()) {            
-            Thing episode = createEpisode(bag);
-            episode.addRelationship(new ProxyRelationship("series", series));
-            retval.put(episode.getString("EPGID"), episode);
-        }
-        
-        return retval;
-    }
-
-    private List<Thing> createFileThings(ArrayOfPVSPropertyBag episodeBags, Map<String, Thing> episodes) {
-         List<Thing> retval = new ArrayList<>();
+    private Collection<Thing> createEpisodeThings(ArrayOfPVSPropertyBag episodeBags, Thing series) {
+        Collection<Thing> retval = new ArrayList<>();
 
         for (PVSPropertyBag bag : episodeBags.getPVSPropertyBag()) {
-            Map<String, String> properties = PropertyConverter.convert(bag);
-            Thing file = createFile(properties);
-            Thing episode = episodes.get(properties.get("EPGID"));
+            Map<String, String> props = PropertyConverter.convert(bag);
+            Thing episode = createEpisode(props);
+            Thing file = createFileThing(props);
+            Thing recording = createRecordingThing(props);
+            episode.addRelationship(new ProxyRelationship("series", series));
             episode.addRelationship(new ProxyRelationship("location", file));
+            retval.add(episode);
+            retval.add(file);
+            retval.add(recording);
         }
-        
+
         return retval;
     }
-    
+
     private Thing createSeries(PVSPropertyBag bag) {
         Thing retval = new Thing(SERIES_STANDARD_ID, SOURCE_ID);
+        Map<String, String> props = PropertyConverter.convert(bag);
 
-        for (PVSProperty pvsProperty : bag.getProperties().getPVSProperty()) {
-            retval.setProperty(pvsProperty.getName(), pvsProperty.getValue());
-        }
-        
+        retval.setProperty("title", props.get("Name"));
+        retval.setProperty("zap2it-id", "EP00" + props.get("SeriesKey"));
+
         return retval;
     }
-    
-    private Thing createEpisode(PVSPropertyBag bag) {
+
+    private Thing createEpisode(Map<String, String> props) {
         Thing retval = new Thing(EPISODE_STANDARD_ID, SOURCE_ID);
 
-        for (PVSProperty pvsProperty : bag.getProperties().getPVSProperty()) {
-            retval.setProperty(pvsProperty.getName(), pvsProperty.getValue());
-        }
-        
+        retval.setProperty("actors", props.get("Actors"));
+        retval.setProperty("zap2it-id", props.get("EPGID"));
+        retval.setProperty("description", props.get("EpisodeDescription"));
+        retval.setProperty("title", props.get("EpisodeTitle"));
+        retval.setProperty("genre", props.get("Genre"));
+        retval.setProperty("original-air-date", props.get("OriginalAirDate"));
+        retval.setProperty("rating", props.get("Rating"));
+        retval.setProperty("recommendation", props.get("Recommendation"));
+        retval.setProperty("watched", props.get("Watched"));
+
         return retval;
     }
-    
-    private Thing createFile(Map<String, String> properties) {
-        Thing retval = new Thing(FILE_STANDARD_ID, SOURCE_ID);
 
-        for (Map.Entry<String, String> property : properties.entrySet()) {
-            retval.setProperty(property.getKey(), property.getValue());
-        }
-        
+    private Thing createFileThing(Map<String, String> props) {
+        Thing retval = new Thing(FILE_STANDARD_ID, SOURCE_ID);
+        retval.setProperty("path", props.get("FullName"));
+        return retval;
+    }
+
+    private Thing createRecordingThing(Map<String, String> props) {
+        Thing retval = new Thing(RECORDING_STANDARD_ID, SOURCE_ID);
+        /*
+         "ActualStart": "128940804041590000",
+         "Added": "129785012346602128",
+         "AddedBias": "360",
+         "Channel": "653",
+         "Duration": "17940000000",
+         "Editable": "TRUE",
+         "LastExistsTime": "129785023376312991",
+         "LastPosition": "",
+         "LastWriteTime": "128941119064740000",
+         "Length": "260104706",
+         "Managed": "True",
+         "MovieYear": "",
+         "OriginalFileSize": "2747662336",
+         "OriginalStart": "",
+         "ReadOnly": "True",
+         "ShowSqueeze": "True",
+         "SortableTime": "128940588041590000",
+         "StationCallsign": "KUSADT",
+         "TZBias": "360",
+         "TargetStart": "128940804000000000",
+         "UniqueChannelID": "800990000200653000000021298",
+         "Watched": "",
+         "Clip": "",
+         "ClipTitle": "",
+         "SrtExists": "False",
+         "FileFormat": "H.264/MPEG-4",
+         "Watched": "",
+         * */
+
         return retval;
     }
 }
