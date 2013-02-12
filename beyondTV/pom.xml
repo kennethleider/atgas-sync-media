@@ -24,6 +24,22 @@
     <dependencies>
         <dependency>
             <groupId>org.atgas</groupId>
+            <artifactId>atgas-core-interface</artifactId>
+            <version>0.2-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.atgas</groupId>
+            <artifactId>atgas-core-json</artifactId>
+            <version>0.1-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.atgas.media</groupId>
+            <artifactId>standards</artifactId>
+            <version>0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.atgas</groupId>
             <artifactId>beyondTV-webservices</artifactId>
             <version>0.1-SNAPSHOT</version>
         </dependency>
@@ -31,6 +47,7 @@
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20090211</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -39,21 +56,22 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
+            <version>1.9.5</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
-            <version>3.0.6.RELEASE</version>
+            <version>3.2.1.RELEASE</version>
             <scope>test</scope>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
-            <version>3.1.1.RELEASE</version>
-        </dependency>
-        <dependency>
-            <groupId>org.atgas</groupId>
-            <artifactId>atgas-store-interface</artifactId>
-            <version>0.1-SNAPSHOT</version>
+            <version>3.2.1.RELEASE</version>
         </dependency>
     </dependencies>
     

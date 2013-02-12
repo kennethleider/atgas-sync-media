@@ -6,7 +6,7 @@ package org.atgas.sync.media.tvdb.translator;
 
 import java.util.Collection;
 import java.util.concurrent.Callable;
-import org.atgas.store.Thing;
+import org.atgas.core.Thing;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

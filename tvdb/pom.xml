@@ -46,7 +46,7 @@
         </dependency>
         <dependency>
             <groupId>org.atgas</groupId>
-            <artifactId>atgas-store-interface</artifactId>
+            <artifactId>atgas-core-interface</artifactId>
             <version>0.1-SNAPSHOT</version>
         </dependency>
         <dependency>

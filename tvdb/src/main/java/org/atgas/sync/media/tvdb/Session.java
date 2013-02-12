@@ -21,9 +21,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-import org.atgas.store.ProxyRelationship;
-import org.atgas.store.Thing;
-import org.atgas.store.ThingBuilder;
+import org.atgas.core.ProxyRelationship;
+import org.atgas.core.Thing;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -59,7 +58,7 @@ public class Session {
       List<Thing> retval = new ArrayList<>(nodes.getLength());
       for (int i = 0; i < nodes.getLength(); i++) {
          Series series = (Series) u.unmarshal(nodes.item(i));
-         retval.add(ThingBuilder.build(TVDBMatcher.SERIES_ID, TVDBMatcher.TVDB_SOURCE_ID, series));
+         retval.addAll(convert(series));
       }
       
       return retval;
@@ -94,7 +93,7 @@ public class Session {
        
        if (nodes.getLength() == 1) {
            Series series = (Series) u.unmarshal(nodes.item(0));
-           return ThingBuilder.build(TVDBMatcher.SERIES_ID, TVDBMatcher.TVDB_SOURCE_ID, series);
+           retval.addAll(convert(series));
        }
        
        return null;
@@ -159,9 +158,7 @@ public class Session {
       List<Thing> retval = new ArrayList<>(nodes.getLength());
       for (int i = 0; i < nodes.getLength(); i++) {
           Episode episode = (Episode) u.unmarshal(nodes.item(i));
-          final Thing thing = ThingBuilder.build(TVDBMatcher.EPISODE_ID, TVDBMatcher.TVDB_SOURCE_ID, episode);
-          thing.addRelationship(new ProxyRelationship("series", series));
-          retval.add(thing);
+          retval.addAll(convert(episode, series));
       }
       
       return retval;

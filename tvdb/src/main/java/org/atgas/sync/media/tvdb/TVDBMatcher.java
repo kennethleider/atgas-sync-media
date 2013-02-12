@@ -7,7 +7,7 @@ package org.atgas.sync.media.tvdb;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
-import org.atgas.store.*;
+import org.atgas.core.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.LinkedMultiValueMap;
 
@@ -69,7 +69,7 @@ public class TVDBMatcher implements Callable<Change> {
         Set<Thing> unmatchedSeries = findUnmatched(toMatch.get(SOURCE_SERIES_ID), matchedSeries);
         Map<String, List<Thing>> unmatchedEpisodes = groupBySeries(findUnmatched(toMatch.get(SOURCE_EPISODE_ID), matchedEpisodes));
         
-        Callable<Change> downloader = new TVDBCollector(new ChangeCollector(unmatchedSeries, null), session, store);
+        Callable<Change> downloader = new TVDBCollector(new ChangeCollector(unmatchedSeries, null, null), session, store);
         Map<String, List<Thing>> downloads = groupByStandard(downloader.call().getAdds());
         
         retval.add(downloads.get(SERIES_ID));
@@ -86,7 +86,7 @@ public class TVDBMatcher implements Callable<Change> {
     private Map<Thing, Thing> findMatchedSeries(Collection<Thing> sourceSeries) {
         Map<Thing, Thing> retval = new HashMap<>();
         for (Thing source : sourceSeries) {           
-            String sourceID = source.getRelationships(SOURCE_TYPE).iterator().next().getTargetID();
+            String sourceID = source.getRelationships(SOURCE_TYPE).iterator().next().getDestinationID();
             Set<Thing> stored = store.query(String.format(SERIES_QUERY, sourceID));
             if (stored.size() == 1) {
                 retval.put(source, stored.iterator().next());
@@ -111,7 +111,7 @@ public class TVDBMatcher implements Callable<Change> {
     private Map<Thing, Thing> findMatchedEpisodes(Collection<Thing> episodes) {
         Map<Thing, Thing> retval = new HashMap<>();
         for (Thing source : episodes) {
-            String sourceID = source.getRelationships(SOURCE_TYPE).iterator().next().getTargetID();
+            String sourceID = source.getRelationships(SOURCE_TYPE).iterator().next().getDestinationID();
             Set<Thing> stored = store.query(String.format(EPISODE_QUERY, sourceID));
             if (stored.size() == 1) {             
                 retval.put(source, stored.iterator().next());

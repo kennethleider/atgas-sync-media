@@ -1,0 +1,42 @@
+{
+    "add" : [
+        {
+            "atgas-id" : "c7fb8441-d5db-4113-8af0-e4ba0c3f51fd",
+            "atgas-standard" : "848b326c-c80a-4bd3-baac-d371b1857385",
+            "atgas-source" : "905a07a2-531e-4aa3-b90d-094f9f981050",
+            "name" : "Television Series Standard",
+            "description" : "Metadata about a television series",
+            "fields" : {
+                "title" : {},
+                "description" : {},
+                "air-date" : {}
+            }
+        },
+        {
+            "atgas-id" : "a99a8588-93df-4811-8403-fe22c70fa00a",
+            "atgas-standard" : "848b326c-c80a-4bd3-baac-d371b1857385",
+            "atgas-source" : "905a07a2-531e-4aa3-b90d-094f9f981050",
+            "name" : "Television Episode Standard",
+            "description" : "Metadata about a television episode",
+            "fields" : {
+                "title" : {},
+                "description" : {},
+                "air-date" : {},
+                "rating" : {},
+                "genre" : {}
+            }
+        },
+        {
+            "atgas-id" : "545c4b00-5409-4d92-9cda-59a44f0ec7a9",
+            "atgas-standard" : "848b326c-c80a-4bd3-baac-d371b1857385",
+            "atgas-source" : "905a07a2-531e-4aa3-b90d-094f9f981050",
+            "name" : "ZAP2IT Identification Standard",
+            "description" : "The www.zap2it.com identifier for a television episode or series",
+            "fields" : {
+                "type" : {},
+                "id" : {}
+            }
+        }
+    ],
+    "remove" : []
+}

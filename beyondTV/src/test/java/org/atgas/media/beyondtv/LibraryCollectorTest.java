@@ -6,10 +6,14 @@ package org.atgas.media.beyondtv;
 
 import java.io.FileOutputStream;
 import java.io.PrintStream;
-import org.atgas.store.Change;
-import org.atgas.store.JSON;
+import org.atgas.core.Change;
+import org.atgas.core.json.JSON;
 import org.junit.*;
+import org.mockito.Mock;
+
 import static org.junit.Assert.*;
+
+import static org.mockito.Mockito.mock;
 
 /**
  *
@@ -17,32 +21,16 @@ import static org.junit.Assert.*;
  */
 public class LibraryCollectorTest {
 
-    public LibraryCollectorTest() {
-    }
 
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
 
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    @Before
-    public void setUp() {
-    }
-
-    @After
-    public void tearDown() {
-    }
 
     /**
      * Test of call method, of class LibraryCollector.
      */
     @Test
     public void testCall() throws Exception {
-        BTVSession session = BTVSession.connect("4a57cb5f-2031-4c01-9a08-9194559d111a-7fb9fcba", "administrator", "pword");
-        LibraryCollector instance = new LibraryCollector(session);
+        BTVSession session = mock(BTVSession.class);
+        LibraryCollector instance = new LibraryCollector(session, new PropertyConverter());
         Change result = instance.call();
         PrintStream out = new PrintStream(new FileOutputStream("beyondtv.json"));
         out.println(JSON.format(result));

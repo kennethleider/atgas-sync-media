@@ -10,9 +10,9 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.atgas.store.Change;
-import org.atgas.store.Store;
-import org.atgas.store.Thing;
+import org.atgas.core.Change;
+import org.atgas.core.Store;
+import org.atgas.core.Thing;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**

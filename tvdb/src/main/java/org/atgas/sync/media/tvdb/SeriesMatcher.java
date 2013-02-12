@@ -7,8 +7,8 @@ package org.atgas.sync.media.tvdb;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.atgas.store.Relationship;
-import org.atgas.store.Thing;
+import org.atgas.core.Relationship;
+import org.atgas.core.Thing;
 import org.springframework.util.MultiValueMap;
 
 /**
