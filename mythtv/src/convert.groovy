@@ -9,30 +9,32 @@ import groovy.transform.Field
 @Field scriptDir = new File(getClass().protectionDomain.codeSource.location.path).parent
 @Field public scriptConfig = new ConfigSlurper().parse(new File("${scriptDir}/transcode.cfg").toURI().toURL());
 
-new File(scriptConfig.work.root).eachFile(FileType.DIRECTORIES, this.&doConvert)
+new File(scriptConfig.dirs.root).eachFile(FileType.DIRECTORIES, this.&doConvert)
 
 def doConvert(File workingDir) {
     configFile = new File(workingDir, "mythtv.cfg")
     if (!configFile.exists()) return
 
     session = new ConversionSession(scriptConfig, configFile)
-    if (!session.notDone("handbrake")) return
     println "Running conversion ${configFile.parent}"
     session.execute("copy", this.&copy)
-    //session.execute("recording", this.&gatherRecordingInfo)
+    session.execute("recording", this.&gatherRecordingInfo)
     session.execute("mediaInfo", this.&gatherMediaInfo)
     session.execute("conversionProperties", this.&gatherConversionProperties)
     session.execute("handbrake", this.&handbrake)
-    System.exit(0)
-    //session.execute("nameAudioTracks", this.&nameAudioTracks)
-    //session.execute("move", this.&move)
+    session.execute("move", this.&move)
     //session.execute("clean", this.&clean)
 }
 
 def copy(ConversionSession session) {
-    videoCopy = new File(session.config.workingDir, "source.mpg")
+    videoCopy = new File(session.config.workingDir, scriptConfig.names.copy)
     println "Creating ${videoCopy}"
-    videoCopy << new BufferedInputStream(new FileInputStream(session.config.source))
+    proc = "nice cp ${session.config.source} ${videoCopy}".execute()
+    proc.waitFor()
+
+    if (proc.exitValue() != 0) {
+        throw new javax.script.ScriptException("copy exited with ${proc.err.text}")
+    }
 
     return [ "path" : videoCopy.canonicalPath ]
 }
@@ -46,40 +48,48 @@ def gatherRecordingInfo(ConversionSession session) {
 }
 
 def gatherMediaInfo(ConversionSession session) {
-    proc = "mediainfo --Output=Video;%ID%,%FrameRate%,%Codec%,%Height%,%Width%\\n ${session.config.copy.path}".execute()
-    proc.waitFor()
+    videoValues = mediaInfo('Video;height=%Height%,width=%Width%', session.config.copy.path)
 
-    videoValues = proc.in.readLines().findAll { !it.isEmpty() }.collect {
-        values = it.split(",")
-        return [ id : values[0], fps : values[1], codec : values[2], height: values[3], width: values[4] ]
-    }
+    maxHeight = videoValues*.height.max{ it.toInteger() }
+    maxWidth = videoValues*.width.max { it.toInteger() }
 
-    proc = "mediainfo --Output=Audio;%StreamKindID%,%Format%,%Channel(s)%,%BitRate%,%Language%\\n ${session.config.copy.path}".execute()
-    proc.waitFor()
-
-    audioValues = proc.in.readLines().findAll { !it.isEmpty() }.collect {
-        values = it.split(",")
-        return [ id : values[0], format : values[1], channels : values[2], bitrate: values[3], language: values[4] ]
-    }
+    audioValues = mediaInfo("Audio;id=%StreamKindID%,format=%Format%,channels=%Channel(s)%,language=%Language/String3%", session.config.copy.path)
 
     // Only include if all values are set
     audioValues = audioValues.findAll { it.every { !it.value.isEmpty() } }
 
+    // Make the tracks start at 1 not 0
     audioValues = audioValues.collect { it.id = it.id.toInteger() + 1; it }
 
     // Remove excluded languages
-    audioValues - audioValues.findAll { !scriptConfig.audio.excludedLanguages.contains(it.language.toLowerCase()) }
+    audioValues = audioValues.findAll { !scriptConfig.audio.excludedLanguages.contains(it.language) }
 
     // Find the best quality audio with the most channels for each language
     audioValues = audioValues.groupBy {it.language}.collect { languageGroup ->
-        formatList = languageGroup.value.findAll { it.format =~ /AC-3/ }
-        if (formatList.isEmpty()) formatList = languageGroup.value.findAll { it.format =~ /MPEG Audio/ }
-        if (formatList.isEmpty()) formatList = languageGroup.value
+        byFormat = scriptConfig.audio.formatPreference.collect { format -> 
+           languageGroup.value.findAll { it.format == format } 
+        }
+
+        formatList = byFormat.find { !it.isEmpty() }
+        if (formatList == null) formatList = languageGroup.value
 
         formatList.max { it.channels.toInteger() }
     }.flatten()
 
-    return [ video : videoValues, audio : audioValues ]
+    return [ width : maxWidth, height : maxHeight, audio : audioValues ]
+}
+
+def mediaInfo(String output, String path) {
+
+    proc = "mediainfo --Output=${output}\\n ${path}".execute()
+    proc.waitFor()
+    if (proc.exitValue() != 0) {
+        throw new javax.script.ScriptException("mediainfo exited with ${proc.exitValue()}")
+    }
+
+    return proc.in.readLines().findAll { !it.isEmpty() }.collect {
+        it.split(",").collectEntries { it.split('=').toList() }
+    }
 }
 
 def gatherConversionProperties(ConversionSession session) {
@@ -87,30 +97,75 @@ def gatherConversionProperties(ConversionSession session) {
     audioTracks = audio*.id.join(",")
     audioEncoders = audio.collect {"copy"}.join(",")
 
-    height = session.config.mediaInfo.video[0].height.toInteger()
-    width = session.config.mediaInfo.video[0].width.toInteger()
+    height = session.config.mediaInfo.height.toInteger()
+    width = session.config.mediaInfo.width.toInteger()
     area = height * width
-    videoQuality = scriptConfig.video.quality.values().findAll { it.area < area}.last().quality
-    prefLang = "en"
+    videoQuality = scriptConfig.video.quality.values().findAll { it.area < area}.last()
+
     return [ audio: "-a ${audioTracks} -E ${audioEncoders}",
-            video: "-e x264 --x264-profile=high -q ${videoQuality} -5 -s scan -F",
-            container: "-f mkv -N ${prefLang} --native-dub"]
+            video: "-e x264 --x264-profile=${videoQuality.profile} -q ${videoQuality.quality} -5 -s scan -F",
+            container: "-f mkv -N ${scriptConfig.audio.nativeLanguage} --native-dub"]
 }
 
 def handbrake(ConversionSession session) {
     props = session.config.conversionProperties
-    command = "nice HandBrakeCLI -i ${session.config.copy.path} -o ${session.config.workingDir}/handbrake.mkv ${props.audio} ${props.video} ${props.container}"
 
-    out = new File(session.config.workingDir, "handbrake.out.txt").newOutputStream()
-    err = new File(session.config.workingDir, "handbrake.err.txt").newOutputStream()
+    stdout = new File(session.config.workingDir, scriptConfig.names.handbrake.stdout)
+    stderr = new File(session.config.workingDir, scriptConfig.names.handbrake.stderr)
+    output = new File(session.config.workingDir, scriptConfig.names.handbrake.output)
+
+    command = "nice HandBrakeCLI -i ${session.config.copy.path} -o ${output.absolutePath} ${props.audio} ${props.video} ${props.container}"
 
     println "Executing ${command}"
     proc = command.execute()
-    proc.consumeProcessOutput(out, err)
+    proc.consumeProcessOutput(stdout.newOutputStream(), stderr.newOutputStream())
     proc.waitFor()
 
-    [:]
+    if (proc.exitValue() != 0) {
+        throw new javax.script.ScriptException("HandBrakeCLI exited with ${proc.exitValue()}")
+    }
+
+    [ stdout : stdout.absolutePath, stderr : stderr.absolutePath, output : output.absolutePath ]
 }
+
+def move(ConversionSession session) {
+
+    def recording = session.config.recording
+    if (recording.title.isEmpty()) {
+        throw new javax.script.ScriptException("recording.title is unknown}")
+    }
+
+    if (session.config.recording.season.isEmpty()) {
+        throw new javax.script.ScriptException("recording.season is unknown}")
+    }
+
+    if (session.config.recording.episode.isEmpty()) {
+        throw new javax.script.ScriptException("recording.episode is unknown}")
+    }
+
+    destination = new File(scriptConfig.dirs.destination, session.config.recording.title)
+
+    if (!destination.exists() && !destination.mkdirs()) {
+        throw new javax.script.ScriptException("Unabled to create ${destination}")
+    }
+
+    originalName = new File(session.config.source).getName()
+
+    destinationName = String.format('S%02dE%02d-(%s).mkv',recording.season.toInteger(), recording.episode.toInteger(), originalName)
+  
+    destination = new File(destination, destinationName).absolutePath
+
+    println "Creating ${destination}"
+    proc = "nice mv ${session.config.handbrake.output} ${destination}".execute()
+    proc.waitFor()
+
+    if (proc.exitValue() != 0) {
+        throw new javax.script.ScriptException("mv exited with ${proc.err.text}")
+    }
+
+    [ destination : destination ] 
+}
+
 
 class ConversionSession {
 
@@ -161,7 +216,7 @@ class ConversionSession {
         } else if (object instanceof Collection) {
             return object.collect { toConfigObject(it) }
         } else {
-           return object.toString()
+            return object.toString()
         }
     }
 
@@ -181,4 +236,5 @@ class ConversionSession {
         return config[step].status != "DONE"
     }
 }
+
 

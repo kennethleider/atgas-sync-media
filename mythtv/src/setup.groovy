@@ -13,7 +13,7 @@ for (arg in args) {
 
     basename = (source.name =~ /(.*?)\..*/)[0][1]
 
-    workingDir = new File(config.work.root, basename)
+    workingDir = new File(config.dirs.root, basename)
 
     configFile = new File(workingDir, "mythtv.cfg")
     if (!workingDir.exists() && !workingDir.mkdirs()) {
