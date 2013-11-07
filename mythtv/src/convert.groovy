@@ -5,23 +5,23 @@ import groovy.sql.Sql
 import groovy.transform.Field
 
 @Field scriptDir = new File(getClass().protectionDomain.codeSource.location.path).parent
-@Field config = new ConfigSlurper().parse(new File("${scriptDir}/transcode.cfg").toURI().toURL());
+@Field public scriptConfig = new ConfigSlurper().parse(new File("${scriptDir}/transcode.cfg").toURI().toURL());
 
-new File(config.work.root).eachFile(FileType.DIRECTORIES, this.&doConvert)
+new File(scriptConfig.work.root).eachFile(FileType.DIRECTORIES, this.&doConvert)
 
 def doConvert(File workingDir) {
     configFile = new File(workingDir, "mythtv.cfg")
     if (!configFile.exists()) return
 
-    session = new ConversionSession(configFile)
+    session = new ConversionSession(scriptConfig, configFile)
     println "Running conversion ${configFile.parent}"
     session.execute("copy", this.&copy)
     //session.execute("recording", this.&gatherRecordingInfo)
     session.execute("mediaInfo", this.&gatherMediaInfo)
     session.execute("conversionProperties", this.&gatherConversionProperties)
-    //session.execute("handbrake", this.&handbrake)
+    session.execute("handbrake", this.&handbrake)
     //session.execute("nameAudioTracks", this.&nameAudioTracks)
-    session.execute("move", this.&move)
+    //session.execute("move", this.&move)
     //session.execute("clean", this.&clean)
 }
 
@@ -36,7 +36,7 @@ def copy(ConversionSession session) {
 @Grab('mysql:mysql-connector-java:5.1.26')
 @GrabConfig(systemClassLoader=true)
 def gatherRecordingInfo(ConversionSession session) {
-    sql = Sql.newInstance(config.db.url, config.db.username, config.db.password)
+    sql = Sql.newInstance(scriptConfig.db.url, scriptConfig.db.username, scriptConfig.db.password)
     row = sql.firstRow("select title, subtitle, season, episode, seriesid, programid from recorded where basename = ${session.config.name}")
     return row
 }
@@ -50,7 +50,7 @@ def gatherMediaInfo(ConversionSession session) {
         return [ id : values[0], fps : values[1], codec : values[2], height: values[3], width: values[4] ]
     }
 
-    proc = "mediainfo --Output=Audio;%ID%,%Format%,%Channel(s)%,%BitRate%,%Language%\\n ${session.config.copy.path}".execute()
+    proc = "mediainfo --Output=Audio;%StreamKindID%,%Format%,%Channel(s)%,%BitRate%,%Language%\\n ${session.config.copy.path}".execute()
     proc.waitFor()
 
     audioValues = proc.in.readLines().findAll { !it.isEmpty() }.collect {
@@ -61,8 +61,10 @@ def gatherMediaInfo(ConversionSession session) {
     // Only include if all values are set
     audioValues = audioValues.findAll { it.every { !it.value.isEmpty() } }
 
+    audioValues = audioValues.collect { it.id = it.id.toInteger() + 1; it }
+
     // Remove excluded languages
-    audioValues - audioValues.findAll { !config.audio.excludedLanguages.contains(it.language.toLowerCase()) }
+    audioValues - audioValues.findAll { !scriptConfig.audio.excludedLanguages.contains(it.language.toLowerCase()) }
 
     // Find the best quality audio with the most channels for each language
     audioValues = audioValues.groupBy {it.language}.collect { languageGroup ->
@@ -76,25 +78,40 @@ def gatherMediaInfo(ConversionSession session) {
     return [ video : videoValues, audio : audioValues ]
 }
 
-def getGatherConversionProperties(ConversionSession session) {
-
-   return [ audio: "-a ${audioTracks} -E ${audioCodecs} -B ${audioBitrates} -A ${audioLanguages}",
+def gatherConversionProperties(ConversionSession session) {
+    audio = session.config.mediaInfo.audio
+    audioTracks = audio*.id.join(",")
+    audioEncoders = audio.collect {"copy"}.join(",")
+    videoQuality = 32
+    prefLang = "en"
+    return [ audio: "-a ${audioTracks} -E ${audioEncoders}",
             video: "-e x264 --x264-profile=high -q ${videoQuality} -5 -s scan -F",
             container: "-f mkv -N ${prefLang} --native-dub"]
 }
 
 def handbrake(ConversionSession session) {
     props = session.config.conversionProperties
-    proc = "nice 15 HandBrakeCLI -i ${session.config.copy.path} -o ${session.config.workingDir}/handbrake.mkv ${props.audio} ${props.video} ${props.container}"
+    command = "nice HandBrakeCLI -i ${session.config.copy.path} -o ${session.config.workingDir}/handbrake.mkv ${props.audio} ${props.video} ${props.container}"
+
+    out = new File(session.config.workingDir, "handbrake.out.txt").newOutputStream()
+    err = new File(session.config.workingDir, "handbrake.err.txt").newOutputStream()
+
+    println "Executing ${command}"
+    proc = command.execute()
+    proc.consumeProcessOutput(out, err)
     proc.waitFor()
+
+    [:]
 }
 
 class ConversionSession {
 
     ConfigObject config;
     private final File configPath
+    private final ConfigObject scriptConfig
 
-    ConversionSession(File configPath) {
+    ConversionSession(ConfigObject scriptConfig, File configPath) {
+        this.scriptConfig = scriptConfig
         this.configPath = configPath
         load()
     }
@@ -112,7 +129,7 @@ class ConversionSession {
             try {
                 println "Executing step ${step}"
                 Map values = objectClosure(this)
-                config.put(step, values)
+                config.put(step, toConfigObject(values))
             } catch (Exception e) {
                 fail(step, e)
                 throw e
@@ -123,10 +140,22 @@ class ConversionSession {
         }
     }
 
+    def toConfigObject(Object object) {
+        if (object instanceof Map) {
+            ConfigObject retval = new ConfigObject()
+            retval.putAll(object.collectEntries { key, value -> [ key, toConfigObject(value)]})
+            return retval;
+        } else if (object instanceof Collection) {
+            return object.collect { toConfigObject(it) }
+        } else {
+           return object.toString()
+        }
+    }
+
     def fail(String step, Exception e) {
         config[step] = new ConfigObject()
         config[step].status = "FAIL"
-        config[step].exception = e.toString()
+        new File(config.workingDir, scriptConfig.names.exception).withOutputStream { e.printStackTrace(new PrintStream(it))}
         save()
     }
 
