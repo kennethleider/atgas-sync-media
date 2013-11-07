@@ -2,6 +2,8 @@
 
 import groovy.io.FileType
 import groovy.sql.Sql
+import groovy.time.TimeCategory
+import groovy.time.TimeDuration
 import groovy.transform.Field
 
 @Field scriptDir = new File(getClass().protectionDomain.codeSource.location.path).parent
@@ -14,12 +16,14 @@ def doConvert(File workingDir) {
     if (!configFile.exists()) return
 
     session = new ConversionSession(scriptConfig, configFile)
+    if (!session.notDone("handbrake")) return
     println "Running conversion ${configFile.parent}"
     session.execute("copy", this.&copy)
     //session.execute("recording", this.&gatherRecordingInfo)
     session.execute("mediaInfo", this.&gatherMediaInfo)
     session.execute("conversionProperties", this.&gatherConversionProperties)
     session.execute("handbrake", this.&handbrake)
+    System.exit(0)
     //session.execute("nameAudioTracks", this.&nameAudioTracks)
     //session.execute("move", this.&move)
     //session.execute("clean", this.&clean)
@@ -82,7 +86,11 @@ def gatherConversionProperties(ConversionSession session) {
     audio = session.config.mediaInfo.audio
     audioTracks = audio*.id.join(",")
     audioEncoders = audio.collect {"copy"}.join(",")
-    videoQuality = 32
+
+    height = session.config.mediaInfo.video[0].height.toInteger()
+    width = session.config.mediaInfo.video[0].width.toInteger()
+    area = height * width
+    videoQuality = scriptConfig.video.quality.values().findAll { it.area < area}.last().quality
     prefLang = "en"
     return [ audio: "-a ${audioTracks} -E ${audioEncoders}",
             video: "-e x264 --x264-profile=high -q ${videoQuality} -5 -s scan -F",
@@ -128,7 +136,12 @@ class ConversionSession {
         if (notDone(step)) {
             try {
                 println "Executing step ${step}"
+                Date start = new Date()
                 Map values = objectClosure(this)
+                Date end = new Date()
+                TimeDuration duration = TimeCategory.minus(end, start)
+                values.put("runTime", duration.toString())
+                values.put("runTimeMilliseconds", duration.toMilliseconds())
                 config.put(step, toConfigObject(values))
             } catch (Exception e) {
                 fail(step, e)
@@ -164,7 +177,7 @@ class ConversionSession {
         save()
     }
 
-    private boolean notDone(String step) {
+    boolean notDone(String step) {
         return config[step].status != "DONE"
     }
 }
