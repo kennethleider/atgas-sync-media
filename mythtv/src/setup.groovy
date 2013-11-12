@@ -20,8 +20,10 @@ for (arg in args) {
         System.err.println("Unabled to create ${workingDir}")    
         continue;
     }
-    
-    if (configFile.exists()) {
+
+    archiveFile = new File(config.dirs.archive, source.name + ".cfg")
+
+    if (configFile.exists() || archiveFile.exists()) {
         println "${configFile} already exists"
     } else {
         println "Creating ${configFile}"

@@ -17,13 +17,20 @@ def doConvert(File workingDir) {
 
     session = new ConversionSession(scriptConfig, configFile)
     println "Running conversion ${configFile.parent}"
-    session.execute("copy", this.&copy)
-    session.execute("recording", this.&gatherRecordingInfo)
-    session.execute("mediaInfo", this.&gatherMediaInfo)
-    session.execute("conversionProperties", this.&gatherConversionProperties)
-    session.execute("handbrake", this.&handbrake)
-    session.execute("move", this.&move)
-    //session.execute("clean", this.&clean)
+    try {
+        session.execute("copy", this.&copy)
+        session.execute("recording", this.&gatherRecordingInfo)
+        session.execute("mediaInfo", this.&gatherMediaInfo)
+        session.force("conversionProperties", this.&gatherConversionProperties)
+        session.execute("handbrake", this.&handbrake)
+        session.execute("move", this.&move)
+        session.execute("archive", this.&archive)
+
+        //proc = "rm -rf ${workingDir}".execute()
+        //proc.waitFor()
+
+    } catch (e) { System.err.println e.getMessage(); }
+
 }
 
 def copy(ConversionSession session) {
@@ -42,9 +49,15 @@ def copy(ConversionSession session) {
 @Grab('mysql:mysql-connector-java:5.1.26')
 @GrabConfig(systemClassLoader=true)
 def gatherRecordingInfo(ConversionSession session) {
+    name = new File(session.config.workingDir).name + ".mpg"
     sql = Sql.newInstance(scriptConfig.db.url, scriptConfig.db.username, scriptConfig.db.password)
-    row = sql.firstRow("select title, subtitle, season, episode, seriesid, programid from recorded where basename = ${session.config.name}")
-    return row
+    row = sql.firstRow("select title, subtitle, season, episode, seriesid, programid from recorded where basename = ${name}")
+    sql.close()
+    if (row == null) {
+        [ title : '', subtitle : '', season : '', episode : '', seriesid : '', programid : '' ]
+    } else {
+        row
+    }
 }
 
 def gatherMediaInfo(ConversionSession session) {
@@ -80,15 +93,18 @@ def gatherMediaInfo(ConversionSession session) {
 }
 
 def mediaInfo(String output, String path) {
-
-    proc = "mediainfo --Output=${output}\\n ${path}".execute()
+    command = "mediainfo --Output=${output}\\n ${path}"
+    println "Executing ${command}"
+    proc = command.execute()
     proc.waitFor()
     if (proc.exitValue() != 0) {
-        throw new javax.script.ScriptException("mediainfo exited with ${proc.exitValue()}")
+        throw new javax.script.ScriptException("mediainfo exited with ${proc.err.text}")
     }
+    lines = proc.in.readLines()
+    println lines
 
-    return proc.in.readLines().findAll { !it.isEmpty() }.collect {
-        it.split(",").collectEntries { it.split('=').toList() }
+    return lines.findAll { !it.isEmpty() }.collect {
+        it.split(",").collectEntries { retval = it.split('=').toList() }
     }
 }
 
@@ -102,6 +118,8 @@ def gatherConversionProperties(ConversionSession session) {
     area = height * width
     videoQuality = scriptConfig.video.quality.values().findAll { it.area < area}.last()
 
+    if (videoQuality.quality.toInteger() > 22 ) throw new javax.script.ScriptException("not running these yet")
+
     return [ audio: "-a ${audioTracks} -E ${audioEncoders}",
             video: "-e x264 --x264-profile=${videoQuality.profile} -q ${videoQuality.quality} -5 -s scan -F",
             container: "-f mkv -N ${scriptConfig.audio.nativeLanguage} --native-dub"]
@@ -114,7 +132,7 @@ def handbrake(ConversionSession session) {
     stderr = new File(session.config.workingDir, scriptConfig.names.handbrake.stderr)
     output = new File(session.config.workingDir, scriptConfig.names.handbrake.output)
 
-    command = "nice HandBrakeCLI -i ${session.config.copy.path} -o ${output.absolutePath} ${props.audio} ${props.video} ${props.container}"
+    command = "nice HandBrakeCLI ${props.audio} ${props.video} ${props.container} -i ${session.config.copy.path} -o ${output.absolutePath}"
 
     println "Executing ${command}"
     proc = command.execute()
@@ -156,7 +174,9 @@ def move(ConversionSession session) {
     destination = new File(destination, destinationName).absolutePath
 
     println "Creating ${destination}"
-    proc = "nice mv ${session.config.handbrake.output} ${destination}".execute()
+    command = [ 'nice', 'mv', session.config.handbrake.output, destination ]
+    println command
+    proc = command.execute()
     proc.waitFor()
 
     if (proc.exitValue() != 0) {
@@ -166,11 +186,28 @@ def move(ConversionSession session) {
     [ destination : destination ] 
 }
 
+def archive(ConversionSession session) {
+    originalName = new File(session.config.source).getName()
+
+    destination = new File(scriptConfig.dirs.archive, originalName + ".cfg").absolutePath
+
+    println "Archiving configuration to ${destination}"
+
+    command = [ 'nice', 'mv', session.configPath.absolutePath, destination ]
+    println command
+    proc = command.execute()
+    proc.waitFor()
+
+    if (proc.exitValue() != 0) throw new javax.script.ScriptException("mv exited with ${proc.err.text}")
+
+    [ destination : destination ]
+}
+
 
 class ConversionSession {
 
     ConfigObject config;
-    private final File configPath
+    final File configPath
     private final ConfigObject scriptConfig
 
     ConversionSession(ConfigObject scriptConfig, File configPath) {
@@ -189,23 +226,27 @@ class ConversionSession {
 
     def execute(String step, Closure<Object> objectClosure) {
         if (notDone(step)) {
-            try {
-                println "Executing step ${step}"
-                Date start = new Date()
-                Map values = objectClosure(this)
-                Date end = new Date()
-                TimeDuration duration = TimeCategory.minus(end, start)
-                values.put("runTime", duration.toString())
-                values.put("runTimeMilliseconds", duration.toMilliseconds())
-                config.put(step, toConfigObject(values))
-            } catch (Exception e) {
-                fail(step, e)
-                throw e
-            }
-            done(step)
+            force(step, objectClosure)
         } else {
             println "Skipping step ${step}"
         }
+    }
+
+    public force(String step, Closure<Object> objectClosure) {
+        try {
+            println "Executing step ${step}"
+            Date start = new Date()
+            Map values = objectClosure(this)
+            Date end = new Date()
+            TimeDuration duration = TimeCategory.minus(end, start)
+            values.put("runTime", duration.toString())
+            values.put("runTimeMilliseconds", duration.toMilliseconds())
+            config.put(step, toConfigObject(values))
+        } catch (Exception e) {
+            fail(step, e)
+            throw e
+        }
+        done(step)
     }
 
     def toConfigObject(Object object) {
