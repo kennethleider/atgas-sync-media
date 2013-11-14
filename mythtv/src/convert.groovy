@@ -12,44 +12,46 @@ import groovy.transform.Field
 new File(scriptConfig.dirs.root).eachFile(FileType.DIRECTORIES, this.&doConvert)
 
 def doConvert(File workingDir) {
+    if (checkForRecentActivity(workingDir)) return
+
     configFile = new File(workingDir, "mythtv.cfg")
     if (!configFile.exists()) return
 
     session = new ConversionSession(scriptConfig, configFile)
     println "Running conversion ${configFile.parent}"
     try {
-        session.execute("copy", this.&copy)
         session.execute("recording", this.&gatherRecordingInfo)
         session.execute("mediaInfo", this.&gatherMediaInfo)
-        session.force("conversionProperties", this.&gatherConversionProperties)
+        session.execute("conversionProperties", this.&gatherConversionProperties)
         session.execute("handbrake", this.&handbrake)
         session.execute("move", this.&move)
+        session.execute("report", this.&report)
         session.execute("archive", this.&archive)
 
-        //proc = "rm -rf ${workingDir}".execute()
-        //proc.waitFor()
+        proc = "rm -rf ${workingDir}".execute()
+        proc.waitFor()
 
     } catch (e) { System.err.println e.getMessage(); }
 
 }
 
-def copy(ConversionSession session) {
-    videoCopy = new File(session.config.workingDir, scriptConfig.names.copy)
-    println "Creating ${videoCopy}"
-    proc = "nice cp ${session.config.source} ${videoCopy}".execute()
-    proc.waitFor()
+def boolean checkForRecentActivity(File workingDir) {
+    File youngest = workingDir.listFiles().max { it.lastModified() }
+    int age = (System.currentTimeMillis() - youngest.lastModified())/1000
+    def delay = scriptConfig.delays.convert.toInteger()
 
-    if (proc.exitValue() != 0) {
-        throw new javax.script.ScriptException("copy exited with ${proc.err.text}")
+    if (age < delay) {
+        System.err.println("${workingDir} may be being worked on.  SKIPPING")
+        return true
     }
 
-    return [ "path" : videoCopy.canonicalPath ]
+    return false
 }
 
 @Grab('mysql:mysql-connector-java:5.1.26')
 @GrabConfig(systemClassLoader=true)
 def gatherRecordingInfo(ConversionSession session) {
-    name = new File(session.config.workingDir).name + ".mpg"
+    name = new File(session.config.origin).name
     sql = Sql.newInstance(scriptConfig.db.url, scriptConfig.db.username, scriptConfig.db.password)
     row = sql.firstRow("select title, subtitle, season, episode, seriesid, programid from recorded where basename = ${name}")
     sql.close()
@@ -61,12 +63,12 @@ def gatherRecordingInfo(ConversionSession session) {
 }
 
 def gatherMediaInfo(ConversionSession session) {
-    videoValues = mediaInfo('Video;height=%Height%,width=%Width%', session.config.copy.path)
+    videoValues = mediaInfo('Video;height=%Height%,width=%Width%', session.config.source)
 
     maxHeight = videoValues*.height.max{ it.toInteger() }
     maxWidth = videoValues*.width.max { it.toInteger() }
 
-    audioValues = mediaInfo("Audio;id=%StreamKindID%,format=%Format%,channels=%Channel(s)%,language=%Language/String3%", session.config.copy.path)
+    audioValues = mediaInfo("Audio;id=%StreamKindID%,format=%Format%,channels=%Channel(s)%,language=%Language/String3%", session.config.source)
 
     // Only include if all values are set
     audioValues = audioValues.findAll { it.every { !it.value.isEmpty() } }
@@ -101,7 +103,6 @@ def mediaInfo(String output, String path) {
         throw new javax.script.ScriptException("mediainfo exited with ${proc.err.text}")
     }
     lines = proc.in.readLines()
-    println lines
 
     return lines.findAll { !it.isEmpty() }.collect {
         it.split(",").collectEntries { retval = it.split('=').toList() }
@@ -132,7 +133,7 @@ def handbrake(ConversionSession session) {
     stderr = new File(session.config.workingDir, scriptConfig.names.handbrake.stderr)
     output = new File(session.config.workingDir, scriptConfig.names.handbrake.output)
 
-    command = "nice HandBrakeCLI ${props.audio} ${props.video} ${props.container} -i ${session.config.copy.path} -o ${output.absolutePath}"
+    command = "nice HandBrakeCLI ${props.audio} ${props.video} ${props.container} -i ${session.config.source} -o ${output.absolutePath}"
 
     println "Executing ${command}"
     proc = command.execute()
@@ -150,15 +151,15 @@ def move(ConversionSession session) {
 
     def recording = session.config.recording
     if (recording.title.isEmpty()) {
-        throw new javax.script.ScriptException("recording.title is unknown}")
+        throw new javax.script.ScriptException("recording.title is unknown")
     }
 
     if (session.config.recording.season.isEmpty()) {
-        throw new javax.script.ScriptException("recording.season is unknown}")
+        throw new javax.script.ScriptException("recording.season is unknown")
     }
 
     if (session.config.recording.episode.isEmpty()) {
-        throw new javax.script.ScriptException("recording.episode is unknown}")
+        throw new javax.script.ScriptException("recording.episode is unknown")
     }
 
     destination = new File(scriptConfig.dirs.destination, session.config.recording.title)
@@ -175,7 +176,6 @@ def move(ConversionSession session) {
 
     println "Creating ${destination}"
     command = [ 'nice', 'mv', session.config.handbrake.output, destination ]
-    println command
     proc = command.execute()
     proc.waitFor()
 
@@ -187,14 +187,13 @@ def move(ConversionSession session) {
 }
 
 def archive(ConversionSession session) {
-    originalName = new File(session.config.source).getName()
+    originalName = new File(session.config.origin).getName()
 
     destination = new File(scriptConfig.dirs.archive, originalName + ".cfg").absolutePath
 
     println "Archiving configuration to ${destination}"
 
     command = [ 'nice', 'mv', session.configPath.absolutePath, destination ]
-    println command
     proc = command.execute()
     proc.waitFor()
 
@@ -202,6 +201,17 @@ def archive(ConversionSession session) {
 
     [ destination : destination ]
 }
+
+def report(ConversionSession session) {
+    originalName = new File(session.config.origin).getName()
+    startSize = new File(session.config.source).length()
+    finalSize = new File(session.config.move.destination).length()
+    line = "${originalName},${startSize},${finalSize},${finalSize / startSize},${session.config.handbrake.runTimeMilliseconds},${session.config.conversionProperties.video}"
+
+    new File(scriptConfig.dirs.report).withWriterAppend { it.println(line) }
+    [ line : line ]
+}
+
 
 
 class ConversionSession {
