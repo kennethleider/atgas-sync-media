@@ -37,6 +37,11 @@ def doConvert(File workingDir) {
 
 def boolean checkForRecentActivity(File workingDir) {
     File youngest = workingDir.listFiles().max { it.lastModified() }
+    if (youngest == null) {
+        System.err.println("${workingDir} may be empty.  SKIPPING")
+        workingDir.delete()
+        return true
+    }
     int age = (System.currentTimeMillis() - youngest.lastModified())/1000
     def delay = scriptConfig.delays.convert.toInteger()
 
@@ -119,7 +124,7 @@ def gatherConversionProperties(ConversionSession session) {
     area = height * width
     videoQuality = scriptConfig.video.quality.values().findAll { it.area < area}.last()
 
-    if (videoQuality.quality.toInteger() > 22 ) throw new javax.script.ScriptException("not running these yet")
+    if (videoQuality.quality.toInteger() > 30 ) throw new javax.script.ScriptException("not running these yet")
 
     return [ audio: "-a ${audioTracks} -E ${audioEncoders}",
             video: "-e x264 --x264-profile=${videoQuality.profile} -q ${videoQuality.quality} -5 -s scan -F",
@@ -168,7 +173,7 @@ def move(ConversionSession session) {
         throw new javax.script.ScriptException("Unabled to create ${destination}")
     }
 
-    originalName = new File(session.config.source).getName()
+    originalName = new File(session.config.origin).getName()
 
     destinationName = String.format('S%02dE%02d-(%s).mkv',recording.season.toInteger(), recording.episode.toInteger(), originalName)
   
@@ -206,7 +211,8 @@ def report(ConversionSession session) {
     originalName = new File(session.config.origin).getName()
     startSize = new File(session.config.source).length()
     finalSize = new File(session.config.move.destination).length()
-    line = "${originalName},${startSize},${finalSize},${finalSize / startSize},${session.config.handbrake.runTimeMilliseconds},${session.config.conversionProperties.video}"
+    ratio = startSize == 0 ? 0 : finalSize / startSize
+    line = "${originalName},${startSize},${finalSize},${ratio},${session.config.handbrake.runTimeMilliseconds},${session.config.conversionProperties.video}"
 
     new File(scriptConfig.dirs.report).withWriterAppend { it.println(line) }
     [ line : line ]
