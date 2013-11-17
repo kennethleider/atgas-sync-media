@@ -149,6 +149,7 @@ def handbrake(ConversionSession session) {
         throw new javax.script.ScriptException("HandBrakeCLI exited with ${proc.exitValue()}")
     }
 
+    Thread.sleep(300 * 1000)
     [ stdout : stdout.absolutePath, stderr : stderr.absolutePath, output : output.absolutePath ]
 }
 
