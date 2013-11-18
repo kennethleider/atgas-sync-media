@@ -1,17 +1,29 @@
 #!/usr/bin/groovy
 
+@Grapes([
+        @Grab(group='org.slf4j', module='slf4j-api', version='1.7.5'),
+        @Grab(group='ch.qos.logback', module='logback-classic', version='1.0.13')
+])
+
+
 import groovy.io.FileType
 import groovy.sql.Sql
 import groovy.time.TimeCategory
 import groovy.time.TimeDuration
 import groovy.transform.Field
+import groovy.util.logging.Slf4j
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Field scriptDir = new File(getClass().protectionDomain.codeSource.location.path).parent
 @Field public scriptConfig = new ConfigSlurper().parse(new File("${scriptDir}/transcode.cfg").toURI().toURL());
-
+@Field Logger log = LoggerFactory.getLogger("convert.groovy")
 new File(scriptConfig.dirs.root).eachFile(FileType.DIRECTORIES, this.&doConvert)
 
 def doConvert(File workingDir) {
+    if (new File(scriptConfig.dirs.stopFile).exists()) System.exit(0)
+
     if (checkForRecentActivity(workingDir)) return
 
     configFile = new File(workingDir, "mythtv.cfg")
@@ -25,13 +37,13 @@ def doConvert(File workingDir) {
         session.execute("conversionProperties", this.&gatherConversionProperties)
         session.execute("handbrake", this.&handbrake)
         session.execute("move", this.&move)
-        session.execute("report", this.&report)
+        session.force("report", this.&report)
         session.execute("archive", this.&archive)
 
-        proc = "rm -rf ${workingDir}".execute()
-        proc.waitFor()
+        //proc = "rm -rf ${workingDir}".execute()
+        //proc.waitFor()
 
-    } catch (e) { System.err.println e.getMessage(); }
+    } catch (e) { log.error e.getMessage(); }
 
 }
 
@@ -41,7 +53,7 @@ def boolean checkForRecentActivity(File workingDir) {
     def delay = scriptConfig.delays.convert.toInteger()
 
     if (age < delay) {
-        System.err.println("${workingDir} may be being worked on.  SKIPPING")
+        log.error "${workingDir} may be being worked on.  SKIPPING"
         return true
     }
 
@@ -96,7 +108,7 @@ def gatherMediaInfo(ConversionSession session) {
 
 def mediaInfo(String output, String path) {
     command = "mediainfo --Output=${output}\\n ${path}"
-    println "Executing ${command}"
+    log.info "Executing ${command}"
     proc = command.execute()
     proc.waitFor()
     if (proc.exitValue() != 0) {
@@ -135,7 +147,7 @@ def handbrake(ConversionSession session) {
 
     command = "nice HandBrakeCLI ${props.audio} ${props.video} ${props.container} -i ${session.config.source} -o ${output.absolutePath}"
 
-    println "Executing ${command}"
+    log.info "Executing ${command}"
     proc = command.execute()
     proc.consumeProcessOutput(stdout.newOutputStream(), stderr.newOutputStream())
     proc.waitFor()
@@ -174,7 +186,7 @@ def move(ConversionSession session) {
   
     destination = new File(destination, destinationName).absolutePath
 
-    println "Creating ${destination}"
+    log.info "Creating ${destination}"
     command = [ 'nice', 'mv', session.config.handbrake.output, destination ]
     proc = command.execute()
     proc.waitFor()
@@ -191,7 +203,7 @@ def archive(ConversionSession session) {
 
     destination = new File(scriptConfig.dirs.archive, originalName + ".cfg").absolutePath
 
-    println "Archiving configuration to ${destination}"
+    log.info "Archiving configuration to ${destination}"
 
     command = [ 'nice', 'mv', session.configPath.absolutePath, destination ]
     proc = command.execute()
@@ -204,16 +216,20 @@ def archive(ConversionSession session) {
 
 def report(ConversionSession session) {
     originalName = new File(session.config.origin).getName()
-    startSize = new File(session.config.source).length()
-    finalSize = new File(session.config.move.destination).length()
-    line = "${originalName},${startSize},${finalSize},${finalSize / startSize},${session.config.handbrake.runTimeMilliseconds},${session.config.conversionProperties.video}"
+    int startSize = new File(session.config.source).length()
+    int finalSize = new File(session.config.move.destination).length()
+    double duration = mediaInfo('General;duration=%Duration%',session.config.source)[0].duration.toDouble() / 1000
+    double megsPerHour = finalSize/(1024.0*1024.0)
+    megsPerHour /= duration / 3600
+    String runTime = session.config.handbrake.runTime.replace(',','')
+    def now = new Date().getDateTimeString()
+    String line = "${scriptConfig.reportName},${now},${originalName},${startSize},${finalSize},${finalSize / startSize},${runTime},${duration},${megsPerHour},${session.config.conversionProperties.video}"
 
     new File(scriptConfig.dirs.report).withWriterAppend { it.println(line) }
     [ line : line ]
 }
 
-
-
+@Slf4j
 class ConversionSession {
 
     ConfigObject config;
@@ -238,13 +254,14 @@ class ConversionSession {
         if (notDone(step)) {
             force(step, objectClosure)
         } else {
-            println "Skipping step ${step}"
+            log.info "Skipping step ${step}"
         }
     }
 
+
     public force(String step, Closure<Object> objectClosure) {
         try {
-            println "Executing step ${step}"
+            log.info "Executing step ${step}"
             Date start = new Date()
             Map values = objectClosure(this)
             Date end = new Date()
