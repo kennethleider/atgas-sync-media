@@ -29,7 +29,7 @@ def doConvert(File workingDir) {
     configFile = new File(workingDir, "mythtv.cfg")
     if (!configFile.exists()) return
 
-    session = new ConversionSession(scriptConfig, configFile)
+    session = new ConversionSession(scriptConfig, configFile) canoe-dev
     println "Running conversion ${configFile.parent}"
     try {
         session.execute("recording", this.&gatherRecordingInfo)
@@ -37,11 +37,11 @@ def doConvert(File workingDir) {
         session.execute("conversionProperties", this.&gatherConversionProperties)
         session.execute("handbrake", this.&handbrake)
         session.execute("move", this.&move)
-        session.force("report", this.&report)
+        session.execute("report", this.&report)
         session.execute("archive", this.&archive)
 
-        //proc = "rm -rf ${workingDir}".execute()
-        //proc.waitFor()
+        proc = "rm -rf ${workingDir}".execute()
+        proc.waitFor()
 
     } catch (e) { log.error e.getMessage(); }
 
@@ -49,6 +49,11 @@ def doConvert(File workingDir) {
 
 def boolean checkForRecentActivity(File workingDir) {
     File youngest = workingDir.listFiles().max { it.lastModified() }
+    if (youngest == null) {
+        System.err.println("${workingDir} may be empty.  SKIPPING")
+        workingDir.delete()
+        return true
+    }
     int age = (System.currentTimeMillis() - youngest.lastModified())/1000
     def delay = scriptConfig.delays.convert.toInteger()
 
@@ -66,7 +71,7 @@ def gatherRecordingInfo(ConversionSession session) {
     name = new File(session.config.origin).name
     sql = Sql.newInstance(scriptConfig.db.url, scriptConfig.db.username, scriptConfig.db.password)
     row = sql.firstRow("select title, subtitle, season, episode, seriesid, programid from recorded where basename = ${name}")
-    sql.close()
+    sql.close()                                      canoe-dev
     if (row == null) {
         [ title : '', subtitle : '', season : '', episode : '', seriesid : '', programid : '' ]
     } else {
@@ -87,7 +92,7 @@ def gatherMediaInfo(ConversionSession session) {
 
     // Make the tracks start at 1 not 0
     audioValues = audioValues.collect { it.id = it.id.toInteger() + 1; it }
-
+                                            canoe-dev
     // Remove excluded languages
     audioValues = audioValues.findAll { !scriptConfig.audio.excludedLanguages.contains(it.language) }
 
@@ -131,14 +136,14 @@ def gatherConversionProperties(ConversionSession session) {
     area = height * width
     videoQuality = scriptConfig.video.quality.values().findAll { it.area < area}.last()
 
-    if (videoQuality.quality.toInteger() > 22 ) throw new javax.script.ScriptException("not running these yet")
+    if (videoQuality.quality.toInteger() > 30 ) throw new javax.script.ScriptException("not running these yet")
 
     return [ audio: "-a ${audioTracks} -E ${audioEncoders}",
             video: "-e x264 --x264-profile=${videoQuality.profile} -q ${videoQuality.quality} -5 -s scan -F",
             container: "-f mkv -N ${scriptConfig.audio.nativeLanguage} --native-dub"]
 }
 
-def handbrake(ConversionSession session) {
+def handbrake(ConversionSession sescanoe-devsion) {
     props = session.config.conversionProperties
 
     stdout = new File(session.config.workingDir, scriptConfig.names.handbrake.stdout)
@@ -156,6 +161,7 @@ def handbrake(ConversionSession session) {
         throw new javax.script.ScriptException("HandBrakeCLI exited with ${proc.exitValue()}")
     }
 
+    Thread.sleep(300 * 1000)
     [ stdout : stdout.absolutePath, stderr : stderr.absolutePath, output : output.absolutePath ]
 }
 
@@ -180,7 +186,7 @@ def move(ConversionSession session) {
         throw new javax.script.ScriptException("Unabled to create ${destination}")
     }
 
-    originalName = new File(session.config.source).getName()
+    originalName = new File(session.config.origin).getName()
 
     destinationName = String.format('S%02dE%02d-(%s).mkv',recording.season.toInteger(), recording.episode.toInteger(), originalName)
   
@@ -224,6 +230,10 @@ def report(ConversionSession session) {
     String runTime = session.config.handbrake.runTime.replace(',','')
     def now = new Date().getDateTimeString()
     String line = "${scriptConfig.reportName},${now},${originalName},${startSize},${finalSize},${finalSize / startSize},${runTime},${duration},${megsPerHour},${session.config.conversionProperties.video}"
+    startSize = new File(session.config.source).length()
+    finalSize = new File(session.config.move.destination).length()
+    ratio = startSize == 0 ? 0 : finalSize / startSize
+    line = "${originalName},${startSize},${finalSize},${ratio},${session.config.handbrake.runTimeMilliseconds},${session.config.conversionProperties.video}"
 
     new File(scriptConfig.dirs.report).withWriterAppend { it.println(line) }
     [ line : line ]
