@@ -29,7 +29,7 @@ def doConvert(File workingDir) {
     configFile = new File(workingDir, "mythtv.cfg")
     if (!configFile.exists()) return
 
-    session = new ConversionSession(scriptConfig, configFile) canoe-dev
+    session = new ConversionSession(scriptConfig, configFile)
     println "Running conversion ${configFile.parent}"
     try {
         session.execute("recording", this.&gatherRecordingInfo)
@@ -71,7 +71,7 @@ def gatherRecordingInfo(ConversionSession session) {
     name = new File(session.config.origin).name
     sql = Sql.newInstance(scriptConfig.db.url, scriptConfig.db.username, scriptConfig.db.password)
     row = sql.firstRow("select title, subtitle, season, episode, seriesid, programid from recorded where basename = ${name}")
-    sql.close()                                      canoe-dev
+    sql.close()
     if (row == null) {
         [ title : '', subtitle : '', season : '', episode : '', seriesid : '', programid : '' ]
     } else {
@@ -92,7 +92,7 @@ def gatherMediaInfo(ConversionSession session) {
 
     // Make the tracks start at 1 not 0
     audioValues = audioValues.collect { it.id = it.id.toInteger() + 1; it }
-                                            canoe-dev
+
     // Remove excluded languages
     audioValues = audioValues.findAll { !scriptConfig.audio.excludedLanguages.contains(it.language) }
 
@@ -143,7 +143,7 @@ def gatherConversionProperties(ConversionSession session) {
             container: "-f mkv -N ${scriptConfig.audio.nativeLanguage} --native-dub"]
 }
 
-def handbrake(ConversionSession sescanoe-devsion) {
+def handbrake(ConversionSession session) {
     props = session.config.conversionProperties
 
     stdout = new File(session.config.workingDir, scriptConfig.names.handbrake.stdout)
@@ -224,23 +224,20 @@ def report(ConversionSession session) {
     originalName = new File(session.config.origin).getName()
     int startSize = new File(session.config.source).length()
     int finalSize = new File(session.config.move.destination).length()
+    double ratio = startSize == 0 ? 0 : finalSize / startSize
     double duration = mediaInfo('General;duration=%Duration%',session.config.source)[0].duration.toDouble() / 1000
-    double megsPerHour = finalSize/(1024.0*1024.0)
-    megsPerHour /= duration / 3600
+    double megsPerHour = startSize/(1024.0*1024.0) / (duration / 3600)
     String runTime = session.config.handbrake.runTime.replace(',','')
-    def now = new Date().getDateTimeString()
-    String line = "${scriptConfig.reportName},${now},${originalName},${startSize},${finalSize},${finalSize / startSize},${runTime},${duration},${megsPerHour},${session.config.conversionProperties.video}"
-    startSize = new File(session.config.source).length()
-    finalSize = new File(session.config.move.destination).length()
-    ratio = startSize == 0 ? 0 : finalSize / startSize
-    line = "${originalName},${startSize},${finalSize},${ratio},${session.config.handbrake.runTimeMilliseconds},${session.config.conversionProperties.video}"
+    String line = "${scriptConfig.reportName},${new Date().getDateTimeString()},${originalName},${startSize},${finalSize},${ratio},${runTime},${duration},${megsPerHour},${session.config.conversionProperties.video}"
+
 
     new File(scriptConfig.dirs.report).withWriterAppend { it.println(line) }
     [ line : line ]
 }
 
-@Slf4j
+
 class ConversionSession {
+    private static Logger log = LoggerFactory.getLogger("convert.groovy")
 
     ConfigObject config;
     final File configPath
