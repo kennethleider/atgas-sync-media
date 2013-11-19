@@ -19,7 +19,13 @@ import org.slf4j.LoggerFactory;
 @Field scriptDir = new File(getClass().protectionDomain.codeSource.location.path).parent
 @Field public scriptConfig = new ConfigSlurper().parse(new File("${scriptDir}/transcode.cfg").toURI().toURL());
 @Field Logger log = LoggerFactory.getLogger("convert.groovy")
-new File(scriptConfig.dirs.root).eachFile(FileType.DIRECTORIES, this.&doConvert)
+
+
+while (!new File(scriptConfig.dirs.stopFile).exists()) {
+    new File(scriptConfig.dirs.root).eachFile(FileType.DIRECTORIES, this.&doConvert)
+
+    Thread.sleep(30000)
+}
 
 def doConvert(File workingDir) {
     if (new File(scriptConfig.dirs.stopFile).exists()) System.exit(0)
