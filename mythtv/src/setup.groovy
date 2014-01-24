@@ -54,8 +54,9 @@ private void createConfigFile(File workingDir, File source) {
     configFile = new File(workingDir, "mythtv.cfg")
     mythConfig = new ConfigObject()
     if (configFile.exists()) {
-        println "Updating ${configFile}"
-        mythConfig = new ConfigSlurper().parse(configFile.toURI().toURL());
+        return
+        //println "Updating ${configFile}"
+        //mythConfig = new ConfigSlurper().parse(configFile.toURI().toURL());
     } else {
         println "Creating ${configFile}"
     }

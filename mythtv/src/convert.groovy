@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 while (!new File(scriptConfig.dirs.stopFile).exists()) {
     new File(scriptConfig.dirs.root).eachFile(FileType.DIRECTORIES, this.&doConvert)
 
-    Thread.sleep(30000)
+    Thread.sleep(3600000)
 }
 
 def doConvert(File workingDir) {
@@ -36,6 +36,8 @@ def doConvert(File workingDir) {
     if (!configFile.exists()) return
 
     session = new ConversionSession(scriptConfig, configFile)
+
+    //if (session.config.handbrake.status != "DONE") return
     println "Running conversion ${configFile.parent}"
     try {
         session.execute("recording", this.&gatherRecordingInfo)
@@ -128,7 +130,11 @@ def mediaInfo(String output, String path) {
     lines = proc.in.readLines()
 
     return lines.findAll { !it.isEmpty() }.collect {
-        it.split(",").collectEntries { retval = it.split('=').toList() }
+        it.split(",").collectEntries {
+            tuple = it.split('=').toList()
+            if (tuple.size() == 1) tuple.add("")
+            tuple
+        }
     }
 }
 
@@ -178,11 +184,11 @@ def move(ConversionSession session) {
         throw new javax.script.ScriptException("recording.title is unknown")
     }
 
-    if (session.config.recording.season.isEmpty()) {
+    if (session.config.recording.season.isEmpty() || recording.season.toInteger() == 0) {
         throw new javax.script.ScriptException("recording.season is unknown")
     }
 
-    if (session.config.recording.episode.isEmpty()) {
+    if (session.config.recording.episode.isEmpty() || recording.episode.toInteger() == 0) {
         throw new javax.script.ScriptException("recording.episode is unknown")
     }
 
@@ -231,7 +237,7 @@ def report(ConversionSession session) {
     int startSize = new File(session.config.source).length()
     int finalSize = new File(session.config.move.destination).length()
     double ratio = startSize == 0 ? 0 : finalSize / startSize
-    double duration = mediaInfo('General;duration=%Duration%',session.config.source)[0].duration.toDouble() / 1000
+    double duration = 1 //mediaInfo('General;duration=%Duration%',session.config.source)[0].duration.toDouble() / 1000
     double megsPerHour = startSize/(1024.0*1024.0) / (duration / 3600)
     String runTime = session.config.handbrake.runTime.replace(',','')
     String line = "${scriptConfig.reportName},${new Date().getDateTimeString()},${originalName},${startSize},${finalSize},${ratio},${runTime},${duration},${megsPerHour},${session.config.conversionProperties.video}"
